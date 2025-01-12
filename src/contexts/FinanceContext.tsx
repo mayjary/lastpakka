@@ -25,9 +25,7 @@ const FinanceContext = createContext<FinanceContextType | undefined>(undefined)
 
 // Initial transactions - you can modify these as needed
 const initialTransactions: Transaction[] = [
-  { id: '1', description: "Salary", amount: 5000, type: 'income', category: 'Salary', date: '2023-06-01' },
-  { id: '2', description: "Rent", amount: 1500, type: 'expense', category: 'Housing', date: '2023-06-05' },
-  { id: '3', description: "Groceries", amount: 200, type: 'expense', category: 'Food', date: '2023-06-10' },
+  
 ]
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

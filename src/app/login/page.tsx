@@ -1,3 +1,5 @@
+"use client"
+
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import {
@@ -10,8 +12,22 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import  supabase from '../../config/supabaseclient'
+import { FaGithub } from "react-icons/fa";
+import { useEffect } from 'react'
 
 export default function LoginPage() {
+  const login = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider:'github',
+    });
+  }
+  
+useEffect(() => {
+  const session = supabase.auth.getSession();
+  console.log(session);
+});
+
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
@@ -30,7 +46,8 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button className="w-full">Login</Button>
+          <Button onClick={login} className='w-full'>Sign in using  <FaGithub /></Button>
+          <button className="w-full">Login</button>
           <p className="text-sm text-center">
             Dont have an account?{" "}
             <Link href="/signup" className="text-primary hover:underline">
