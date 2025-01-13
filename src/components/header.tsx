@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from '@/components/mode-toggle'
 import { 
@@ -13,9 +13,29 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { User } from 'lucide-react'
+import supabase from '@/config/supabaseclient'
+import { useEffect, useState } from 'react'
+import { User as SupabaseUser} from "@supabase/supabase-js";
+
 
 const Header = () => {
   const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data } = await supabase.auth.getSession()
+      setUser(data?.session?.user || null) // Set user data if logged in
+    }
+    fetchSession()
+  }, [])
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    setUser(null) // Clear user state on logout
+    router.push('/login') // Redirect to login page
+  }
 
   return (
     <header className="bg-background shadow-md">
@@ -39,26 +59,31 @@ const Header = () => {
         </nav>
         <div className="flex items-center space-x-2">
           <ModeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <User className="h-[1.2rem] w-[1.2rem]" />
-                <span className="sr-only">User menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Billing</DropdownMenuItem>
-              <DropdownMenuItem>Team</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <Link href="/login" passHref>
-                <DropdownMenuItem asChild>
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-[1.2rem] w-[1.2rem]" />
+                  <span className="sr-only">User menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Billing</DropdownMenuItem>
+                <DropdownMenuItem>Team</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <Button onClick={logout}>
+                  <DropdownMenuItem asChild>
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </Button>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            // Login button if not logged in
+            <Button onClick={() => router.push('/login')}>Log in</Button>
+          )}
         </div>
       </div>
     </header>
@@ -66,4 +91,3 @@ const Header = () => {
 }
 
 export default Header
-

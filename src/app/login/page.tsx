@@ -14,20 +14,40 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import  supabase from '../../config/supabaseclient'
 import { FaGithub } from "react-icons/fa";
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { User } from "@supabase/supabase-js";
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
+
+  const [user,setUser] = useState<User | null>(null); 
+
   const login = async () => {
     await supabase.auth.signInWithOAuth({
       provider:'github',
     });
   }
-  
-useEffect(() => {
-  const session = supabase.auth.getSession();
-  console.log(session);
-});
 
+  
+  
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error fetching session:", error);
+      } else if (data.session) {
+        setUser(data.session.user); 
+      }
+    };
+  
+    fetchSession();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      toast.success(`Logged in as ${user.email}`);
+    }
+  }, [user]);
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
