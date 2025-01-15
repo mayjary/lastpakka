@@ -13,11 +13,21 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FaGithub } from "react-icons/fa";
-import { useEffect, useState } from 'react'
-import { User } from "@supabase/supabase-js";
-import { toast } from "react-hot-toast";
+import { createSessionClient } from '@/lib/appwrite'
 
 export default function LoginPage() {
+
+  async function handleGithubLogin() {
+    try {
+      const { account } = await createSessionClient(); // Ensure this is connected to your server-side function
+      await account.createSession(
+        'github', // Provider name
+        'http://localhost:3000', // Your redirect URL after authentication
+      );
+    } catch (error) {
+      console.error('GitHub login failed:', error);
+    }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -37,10 +47,12 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button className='w-full'>Sign in using  <FaGithub /></Button>
+          <Button onClick={handleGithubLogin} className='w-full'>
+            Sign in using <FaGithub />
+          </Button>
           <button className="w-full">Login</button>
           <p className="text-sm text-center">
-            Dont have an account?{" "}
+            Don't have an account?{" "}
             <Link href="/sign-up" className="text-primary hover:underline">
               Sign up
             </Link>
@@ -50,4 +62,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

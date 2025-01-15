@@ -2,6 +2,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
+export type User = {
+  $id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export type Transaction = {
   id: string
   description: string
@@ -25,13 +32,9 @@ type Goal = {
   current: number
 }
 
-type User = {
-  id: string;
-  name: string;
-  email: string;
-}
-
 type FinanceContextType = {
+  user: User | null;
+  setUser: (user: User | null) => void;
   transactions: Transaction[]
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void
   updateTransaction: (id: string, transaction: Omit<Transaction, 'id'>) => void
@@ -49,18 +52,16 @@ type FinanceContextType = {
   deleteGoal: (id: string) => void
   currency: string
   setCurrency: (currency: string) => void
-  user: User | null;
-  setUser: (user: User | null) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined)
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [goals, setGoals] = useState<Goal[]>([])
   const [currency, setCurrency] = useState('USD')
-  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     // Load user from localStorage on initial render
@@ -140,6 +141,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { balance, income, expense } = calculateFinances()
 
   const value = {
+    user,
+    setUser,
     transactions,
     addTransaction,
     updateTransaction,
@@ -156,9 +159,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateGoal,
     deleteGoal,
     currency,
-    setCurrency,
-    user,
-    setUser,
+    setCurrency
   }
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>

@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { logoutAccount, getLoggedInUser } from "@/lib/actions/user.actions"
+import PlaidLink from "@/components/PlaidLink"
 
 // This is a placeholder. Replace with actual currency data.
 const currencies = [
@@ -16,6 +17,7 @@ const currencies = [
   { code: "EUR", name: "Euro" },
   { code: "GBP", name: "British Pound" },
   { code: "JPY", name: "Japanese Yen" },
+  { code: "INR", name: "Indian Rupee"},
 ]
 
 export default function SettingsPage() {
@@ -97,7 +99,7 @@ export default function SettingsPage() {
                   Link your bank account for automatic transaction tracking
                 </p>
                 <Button asChild>
-                  <Link href="/link-bank-account">Link Bank Account</Link>
+                <PlaidLink user={user} variant="primary" />
                 </Button>
               </div>
               <div className="pt-4">
