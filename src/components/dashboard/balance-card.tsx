@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useFinance } from "@/contexts/FinanceContext"
 
 const BalanceCard = () => {
-  const { balance } = useFinance()
+  const { balance, currency } = useFinance()
 
   return (
     <Card>
@@ -12,7 +12,7 @@ const BalanceCard = () => {
         <CardTitle>Balance</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-bold">${balance.toFixed(2)}</p>
+        <p className="text-3xl font-bold">{currency} {balance.toFixed(2)}</p>
       </CardContent>
     </Card>
   )

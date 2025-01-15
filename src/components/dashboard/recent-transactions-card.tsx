@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2 } from 'lucide-react'
@@ -16,14 +15,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useFinance, Transaction } from "@/contexts/FinanceContext"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
 
 const RecentTransactionsCard = () => {
-  const { transactions, updateTransaction, deleteTransaction } = useFinance()
+  const { transactions, updateTransaction, deleteTransaction, currency } = useFinance()
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   const handleEdit = (transaction: Transaction) => {
-    setEditingTransaction(transaction)
+    setEditingTransaction({ ...transaction })
   }
 
   const handleDelete = (id: string) => {
@@ -45,7 +44,7 @@ const RecentTransactionsCard = () => {
       </CardHeader>
       <CardContent>
         <ul className="space-y-4">
-          {transactions.map((transaction) => (
+          {transactions.slice(-5).reverse().map((transaction: Transaction) => (
             <li key={transaction.id} className="flex justify-between items-center">
               <div>
                 <p className="font-medium">{transaction.description}</p>
@@ -53,7 +52,7 @@ const RecentTransactionsCard = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <p className={`font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                  {transaction.type === 'income' ? '+' : '-'}{currency} {transaction.amount.toFixed(2)}
                 </p>
                 <Dialog>
                   <DialogTrigger asChild>
@@ -88,18 +87,15 @@ const RecentTransactionsCard = () => {
                           </div>
                           <div>
                             <Label htmlFor="type">Type</Label>
-                            <Select
+                            <select
+                              id="type"
                               value={editingTransaction.type}
-                              onValueChange={(value: 'income' | 'expense') => setEditingTransaction({...editingTransaction, type: value})}
+                              onChange={(e) => setEditingTransaction({...editingTransaction, type: e.target.value as 'income' | 'expense'})}
+                              className="w-full p-2 border rounded"
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="income">Income</SelectItem>
-                                <SelectItem value="expense">Expense</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              <option value="income">Income</option>
+                              <option value="expense">Expense</option>
+                            </select>
                           </div>
                           <div>
                             <Label htmlFor="category">Category</Label>

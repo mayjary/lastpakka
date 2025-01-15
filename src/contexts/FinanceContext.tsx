@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect } from 'react'
 
 export type Transaction = {
   id: string
@@ -11,6 +11,26 @@ export type Transaction = {
   date: string
 }
 
+type Budget = {
+  id: string
+  category: string
+  budgeted: number
+  spent: number
+}
+
+type Goal = {
+  id: string
+  name: string
+  target: number
+  current: number
+}
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+}
+
 type FinanceContextType = {
   transactions: Transaction[]
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void
@@ -19,17 +39,45 @@ type FinanceContextType = {
   balance: number
   income: number
   expense: number
+  budgets: Budget[]
+  addBudget: (budget: Omit<Budget, 'id' | 'spent'>) => void
+  updateBudget: (id: string, budget: Omit<Budget, 'id'>) => void
+  deleteBudget: (id: string) => void
+  goals: Goal[]
+  addGoal: (goal: Omit<Goal, 'id' | 'current'>) => void
+  updateGoal: (id: string, goal: Omit<Goal, 'id'>) => void
+  deleteGoal: (id: string) => void
+  currency: string
+  setCurrency: (currency: string) => void
+  user: User | null;
+  setUser: (user: User | null) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined)
 
-// Initial transactions - you can modify these as needed
-const initialTransactions: Transaction[] = [
-  
-]
-
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([])
+  const [goals, setGoals] = useState<Goal[]>([])
+  const [currency, setCurrency] = useState('USD')
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    // Load user from localStorage on initial render
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+  }, [])
+
+  useEffect(() => {
+    // Save user to localStorage whenever it changes
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('user')
+    }
+  }, [user])
 
   const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
     const newTransaction = { ...transaction, id: Date.now().toString() }
@@ -42,6 +90,32 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteTransaction = (id: string) => {
     setTransactions(prev => prev.filter(t => t.id !== id))
+  }
+
+  const addBudget = (budget: Omit<Budget, 'id' | 'spent'>) => {
+    const newBudget = { ...budget, id: Date.now().toString(), spent: 0 }
+    setBudgets(prev => [...prev, newBudget])
+  }
+
+  const updateBudget = (id: string, updatedBudget: Omit<Budget, 'id'>) => {
+    setBudgets(prev => prev.map(b => b.id === id ? { ...updatedBudget, id } : b))
+  }
+
+  const deleteBudget = (id: string) => {
+    setBudgets(prev => prev.filter(b => b.id !== id))
+  }
+
+  const addGoal = (goal: Omit<Goal, 'id' | 'current'>) => {
+    const newGoal = { ...goal, id: Date.now().toString(), current: 0 }
+    setGoals(prev => [...prev, newGoal])
+  }
+
+  const updateGoal = (id: string, updatedGoal: Omit<Goal, 'id'>) => {
+    setGoals(prev => prev.map(g => g.id === id ? { ...updatedGoal, id } : g))
+  }
+
+  const deleteGoal = (id: string) => {
+    setGoals(prev => prev.filter(g => g.id !== id))
   }
 
   const calculateFinances = () => {
@@ -72,7 +146,19 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     deleteTransaction,
     balance,
     income,
-    expense
+    expense,
+    budgets,
+    addBudget,
+    updateBudget,
+    deleteBudget,
+    goals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    currency,
+    setCurrency,
+    user,
+    setUser,
   }
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>

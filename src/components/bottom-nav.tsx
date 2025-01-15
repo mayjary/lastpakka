@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, PieChart, Settings, PlusCircle } from 'lucide-react'
+import { Home, PieChart, Settings, PlusCircle, CreditCard } from 'lucide-react'
 
 const BottomNav = () => {
   const pathname = usePathname()
@@ -24,6 +24,11 @@ const BottomNav = () => {
           <li>
             <Link href="/add-transaction" className="p-2 text-primary">
               <PlusCircle size={32} />
+            </Link>
+          </li>
+          <li>
+            <Link href="/linked-accounts" className={`p-2 ${pathname === '/linked-accounts' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <CreditCard size={24} />
             </Link>
           </li>
           <li>
