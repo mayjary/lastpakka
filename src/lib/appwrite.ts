@@ -53,3 +53,26 @@ export async function createClient() {
 
   return { databases };
 }
+
+export async function getUserId() {
+  const client = new Client()
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT!);
+
+  const session = (await cookies()).get("appwrite-session");
+
+  if (!session || !session.value) {
+    throw new Error("No session");
+  }
+
+  client.setSession(session.value);
+
+  const account = new Account(client);
+  try {
+    const user = await account.get(); // Fetch the user data from Appwrite
+    return user.$id; // Return the user ID
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    throw new Error("Failed to fetch userId");
+  }
+}

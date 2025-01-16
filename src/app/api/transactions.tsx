@@ -4,7 +4,7 @@ import { ID } from "node-appwrite";
 
 const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
-  NEXT_PUBLIC_APPWRITE_TRANSACTION_COLLECTION_ID: USER_COLLECTION_ID,
+  NEXT_PUBLIC_APPWRITE_TRANSACTION_COLLECTION_ID: TRANSACTION_COLLECTION_ID,
 } = process.env;
 
 export async function getTransactions(): Promise<Transaction[]> {
@@ -12,7 +12,7 @@ export async function getTransactions(): Promise<Transaction[]> {
       const { databases } = await createClient();
       const response = await databases.listDocuments(
         DATABASE_ID!,
-        USER_COLLECTION_ID!
+        TRANSACTION_COLLECTION_ID!
       );
       console.log(response); // Check if data is fetched
       return response.documents.map((doc) => ({
@@ -34,14 +34,14 @@ export async function saveTransaction(transaction: Transaction): Promise<void> {
   if (transaction.id) {
     await databases.updateDocument(
       DATABASE_ID!,
-      USER_COLLECTION_ID!,
+      TRANSACTION_COLLECTION_ID!,
       transaction.id,
       transaction
     );
   } else {
     await databases.createDocument(
       DATABASE_ID!,
-      USER_COLLECTION_ID!,
+      TRANSACTION_COLLECTION_ID!,
       ID.unique(),
       transaction
     );
@@ -50,6 +50,6 @@ export async function saveTransaction(transaction: Transaction): Promise<void> {
 
 export async function deleteTransaction(id: string): Promise<void> {
   const { databases } = await createClient();
-  await databases.deleteDocument(DATABASE_ID!, USER_COLLECTION_ID!, id);
+  await databases.deleteDocument(DATABASE_ID!, TRANSACTION_COLLECTION_ID!, id);
 }
 

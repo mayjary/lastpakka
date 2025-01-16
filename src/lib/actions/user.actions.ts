@@ -14,6 +14,7 @@ const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
   APPWRITE_USER_COLLECTION_ID: USER_COLLECTION_ID,
   APPWRITE_BANK_COLLECTION_ID: BANK_COLLECTION_ID,
+  NEXT_PUBLIC_APPWRITE_TRANSACTION_COLLECTION_ID: TRANSACTION_COLLECTION,
 } = process.env;
 
 export const getUserInfo = async ({ userId }: getUserInfoProps) => {
@@ -291,5 +292,97 @@ export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps)
     return parseStringify(bank.documents[0]);
   } catch (error) {
     console.log(error)
+  }
+}
+
+export const getTransactions = async ({ userId }: getUserInfoProps) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const transactions = await database.listDocuments(
+      DATABASE_ID!, 
+      TRANSACTION_COLLECTION!, // Replace this with the actual collection ID for transactions
+      [Query.equal('userId', [userId])] // Querying for transactions of the given userId
+    );
+
+    return parseStringify(transactions.documents);
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    throw new Error('Failed to fetch transactions');
+  }
+}
+
+export const createTransaction = async ({
+  userId,
+  amount,
+  type, // type: 'income' | 'expense'
+  description,
+  date,
+}: {
+  userId: string;
+  amount: number;
+  type: 'income' | 'expense';
+  description: string;
+  date: string;
+}) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const newTransaction = await database.createDocument(
+      DATABASE_ID!,
+      TRANSACTION_COLLECTION!, // Replace with your transactions collection ID
+      ID.unique(),
+      {
+        userId,
+        amount,
+        type,
+        description,
+        date,
+      }
+    );
+
+    return parseStringify(newTransaction);
+  } catch (error) {
+    console.error("Error creating transaction:", error);
+    throw new Error('Failed to create transaction');
+  }
+}
+
+
+export const updateTransaction = async ({
+  transactionId,
+  userId,
+  amount,
+  type, // type: 'income' | 'expense'
+  description,
+  date,
+}: {
+  transactionId: string;
+  userId: string;
+  amount: number;
+  type: 'income' | 'expense';
+  description: string;
+  date: string;
+}) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const updatedTransaction = await database.updateDocument(
+      DATABASE_ID!,
+      TRANSACTION_COLLECTION!, // Replace with your transactions collection ID
+      transactionId, // The ID of the transaction you want to update
+      {
+        userId,
+        amount,
+        type,
+        description,
+        date,
+      }
+    );
+
+    return parseStringify(updatedTransaction);
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    throw new Error('Failed to update transaction');
   }
 }

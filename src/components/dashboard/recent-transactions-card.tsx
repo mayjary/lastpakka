@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -109,11 +109,14 @@ const RecentTransactionsCard = () => {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
+      console.log("Fetching transactions...");
       const response = await fetch('/api/transactions');
+      console.log("Response status:", response.status);
       if (!response.ok) {
         throw new Error('Failed to fetch transactions');
       }
       const data = await response.json();
+      console.log("Fetched transactions:", data);
       setTransactions(data);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -125,6 +128,7 @@ const RecentTransactionsCard = () => {
 
   const handleSaveTransaction = async (transaction: Transaction) => {
     try {
+      console.log("Saving transaction:", transaction);
       const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: {
@@ -135,6 +139,8 @@ const RecentTransactionsCard = () => {
       if (!response.ok) {
         throw new Error('Failed to save transaction');
       }
+      const result = await response.json();
+      console.log("Save transaction result:", result);
       toast.success(transaction.id ? "Transaction updated successfully!" : "Transaction added successfully!");
       fetchTransactions();
       setEditingTransaction(null);
@@ -170,8 +176,32 @@ const RecentTransactionsCard = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Recent Transactions</CardTitle>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Transaction</DialogTitle>
+              <DialogDescription>Enter the details of your new transaction.</DialogDescription>
+            </DialogHeader>
+            <TransactionForm
+              transaction={{
+                description: "",
+                amount: 0,
+                type: "expense",
+                category: "",
+                date: new Date().toISOString().split('T')[0],
+              }}
+              onSave={handleSaveTransaction}
+              onClose={() => {}}
+            />
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -196,7 +226,7 @@ const RecentTransactionsCard = () => {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>{transaction.id ? "Edit Transaction" : "New Transaction"}</DialogTitle>
+                        <DialogTitle>Edit Transaction</DialogTitle>
                         <DialogDescription>Make changes to your transaction here.</DialogDescription>
                       </DialogHeader>
                       {editingTransaction && (
