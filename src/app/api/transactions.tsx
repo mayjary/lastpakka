@@ -22,6 +22,7 @@ export async function getTransactions(): Promise<Transaction[]> {
         type: doc.type || "income",
         category: doc.category || "",
         date: doc.date || "",
+        email: doc.email || "",
       }));
     } catch (error) {
       console.error("Error fetching transactions:", error);

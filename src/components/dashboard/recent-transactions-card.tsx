@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-hot-toast";
 import { Transaction } from "@/types/transaction";
+import { getLoggedInUser } from "@/lib/actions/user.actions";
 
 const TransactionForm = ({
   transaction,
@@ -105,12 +106,28 @@ const RecentTransactionsCard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null); // For storing the logged-in user's email
+
+  // Fetch the logged-in user's email
+  useEffect(() => {
+    const fetchUser = async () => {
+      const loggedInUser = await getLoggedInUser(); // Assuming this function returns user details
+      setUser(loggedInUser);
+    };
+    fetchUser();
+  }, []);
 
   const fetchTransactions = async () => {
+    if (!user?.email) {
+      toast.error("User is not logged in.");
+      return;
+    }
+
     setLoading(true);
     try {
       console.log("Fetching transactions...");
-      const response = await fetch('/api/transactions');
+
+      const response = await fetch(`/api/transactions?email=${user.email}`); // Use email instead of userId
       console.log("Response status:", response.status);
       if (!response.ok) {
         throw new Error('Failed to fetch transactions');
@@ -127,37 +144,53 @@ const RecentTransactionsCard = () => {
   };
 
   const handleSaveTransaction = async (transaction: Transaction) => {
+    console.log("Transaction being saved:", transaction);
+
+    if (!user?.email) {
+      toast.error("User is not logged in.");
+      return;
+    }
+
+    const transactionData = { ...transaction, email: user.email }; // Add email here
+
     try {
-      console.log("Saving transaction:", transaction);
       const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(transaction),
+        body: JSON.stringify(transactionData),
       });
+
       if (!response.ok) {
         throw new Error('Failed to save transaction');
       }
+
       const result = await response.json();
       console.log("Save transaction result:", result);
+
       toast.success(transaction.id ? "Transaction updated successfully!" : "Transaction added successfully!");
-      fetchTransactions();
+      fetchTransactions(); // Refresh the list of transactions
       setEditingTransaction(null);
     } catch (error) {
       console.error("Error saving transaction:", error);
-      toast.error("Failed to save transaction.");
+      toast.error(`Failed to save transaction: ${error.message}`);
     }
   };
 
   const handleDeleteTransaction = async (id: string) => {
+    if (!user?.email) {
+      toast.error("User is not logged in.");
+      return;
+    }
+
     try {
       const response = await fetch('/api/transactions', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, email: user.email }), // Pass email here while deleting
       });
       if (!response.ok) {
         throw new Error('Failed to delete transaction');
@@ -171,8 +204,10 @@ const RecentTransactionsCard = () => {
   };
 
   useEffect(() => {
-    fetchTransactions();
-  }, []);
+    if (user?.email) {
+      fetchTransactions();
+    }
+  }, [user]);
 
   return (
     <Card>
@@ -196,9 +231,10 @@ const RecentTransactionsCard = () => {
                 type: "expense",
                 category: "",
                 date: new Date().toISOString().split('T')[0],
+                email: user?.email || "",  // Pass the email here
               }}
               onSave={handleSaveTransaction}
-              onClose={() => {}}
+              onClose={() => fetchTransactions()}
             />
           </DialogContent>
         </Dialog>
@@ -212,7 +248,6 @@ const RecentTransactionsCard = () => {
               <li key={transaction.id} className="flex justify-between items-center">
                 <div>
                   <p className="font-medium">{transaction.description}</p>
-                  <p className="text-sm text-muted-foreground">{transaction.date}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <p className={`font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"}`}>
@@ -252,4 +287,3 @@ const RecentTransactionsCard = () => {
 };
 
 export default RecentTransactionsCard;
-

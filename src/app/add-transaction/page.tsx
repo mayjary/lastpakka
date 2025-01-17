@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useFinance } from "@/contexts/FinanceContext"
+import { toast } from "react-hot-toast"
 
 const categories = [
   { value: 'salary', label: 'Salary' },
@@ -32,19 +32,42 @@ export default function AddTransactionPage() {
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { addTransaction } = useFinance()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    addTransaction({
-      description,
-      amount: parseFloat(amount),
-      type,
-      category,
-      date,
-    })
-    router.push('/')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description,
+          amount: parseFloat(amount),
+          type,
+          category,
+          date,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to add transaction')
+      }
+
+      const result = await response.json()
+      console.log("Transaction added successfully:", result)
+      toast.success("Transaction added successfully!")
+      router.push('/')
+    } catch (error) {
+      console.error("Error adding transaction:", error)
+      toast.error("Failed to add transaction. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -113,7 +136,9 @@ export default function AddTransactionPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">Add Transaction</Button>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add Transaction'}
+            </Button>
           </form>
         </CardContent>
       </Card>

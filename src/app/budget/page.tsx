@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PlusCircle } from 'lucide-react'
 import { useFinance } from "@/contexts/FinanceContext"
+import { toast } from "react-hot-toast"
 
 export default function BudgetPage() {
   const { budgets, addBudget, currency } = useFinance()
@@ -24,6 +25,17 @@ export default function BudgetPage() {
       setNewAmount("")
     }
   }
+
+  useEffect(() => {
+    budgets.forEach(budget => {
+      if (budget.spent > budget.budgeted) {
+        toast.error(`Budget exceeded for ${budget.category}!`, {
+          duration: 5000,
+          position: 'top-right',
+        })
+      }
+    })
+  }, [budgets])
 
   return (
     <div className="space-y-6">
@@ -58,22 +70,45 @@ export default function BudgetPage() {
         </CardContent>
       </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {budgets.map((budget) => (
-          <Card key={budget.id}>
-            <CardHeader>
-              <CardTitle>{budget.category}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Progress value={(budget.spent / budget.budgeted) * 100} />
-                <div className="flex justify-between text-sm">
-                  <span>Spent: {currency} {budget.spent.toFixed(2)}</span>
-                  <span>Budgeted: {currency} {budget.budgeted.toFixed(2)}</span>
+        {budgets.map((budget) => {
+          const percentSpent = (budget.spent / budget.budgeted) * 100
+          const isExceeded = percentSpent > 100
+          return (
+            <Card key={budget.id} className={isExceeded ? "border-red-500" : ""}>
+              <CardHeader>
+                <CardTitle>{budget.category}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                <Progress 
+                  value={Math.min(percentSpent, 100)} 
+                  className={`${
+                    isExceeded ? "bg-red-200" : ""
+                  } relative w-full h-4 rounded overflow-hidden`}
+                >
+                  <div
+                    className={`h-full transition-all duration-200 ${
+                      isExceeded ? "bg-red-500" : "bg-green-500"
+                    }`}
+                    style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                  ></div>
+                </Progress>
+                  <div className="flex justify-between text-sm">
+                    <span className={isExceeded ? "text-red-500 font-bold" : ""}>
+                      Spent: {currency} {budget.spent.toFixed(2)}
+                    </span>
+                    <span>Budgeted: {currency} {budget.budgeted.toFixed(2)}</span>
+                  </div>
+                  {isExceeded && (
+                    <p className="text-red-500 text-sm">
+                      Budget exceeded by {currency} {(budget.spent - budget.budgeted).toFixed(2)}
+                    </p>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )

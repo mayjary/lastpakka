@@ -9,7 +9,7 @@ const {
 } = process.env;
 
 export interface CreateTransactionProps {
-  userId: string;
+  email: string;
   description: string;
   amount: number;
   type: 'income' | 'expense';
@@ -18,7 +18,7 @@ export interface CreateTransactionProps {
 }
 
 export const createTransaction = async ({
-  userId,
+  email,
   description,
   amount,
   type,
@@ -33,7 +33,7 @@ export const createTransaction = async ({
       TRANSACTION_COLLECTION_ID!,
       ID.unique(),
       {
-        userId,
+        email,
         description,
         amount,
         type,
@@ -66,6 +66,7 @@ export const getTransactions = async (userId: string): Promise<Transaction[]> =>
       type: doc.type,
       category: doc.category,
       date: doc.date,
+      email: doc.email,
     }));
   } catch (error) {
     console.error('Error fetching transactions:', error);

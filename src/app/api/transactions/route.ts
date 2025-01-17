@@ -1,21 +1,36 @@
+"use client"
+
 import { NextResponse } from 'next/server';
-import { createClient, getUserId } from "@/lib/appwrite";
+import { createClient } from "@/lib/appwrite";
 import { Transaction } from "@/types/transaction";
 import { ID, Query } from 'node-appwrite';
+import { getLoggedInUser } from '@/lib/actions/user.actions';
+import { useEffect, useState } from 'react';
 
 const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
   NEXT_PUBLIC_APPWRITE_TRANSACTION_COLLECTION_ID: USER_COLLECTION_ID,
 } = process.env;
 
+const [user, setUser] = useState<any>(null)
+
+// Function to extract the email from the authorization header
+  useEffect(() => {
+    const fetchUser = async () => {
+      const loggedInUser = await getLoggedInUser()
+      setUser(loggedInUser)
+    }
+    fetchUser()
+  }, [])
+
 export async function GET(request: Request) {
-  const userId = await getUserId();
-  console.log("session id: ", userId);
-  if (!userId) {
-    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+  const email = user.email // Extract email instead of userId
+  console.log("session email: ", email);
+  if (!email) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  console.log("GET /api/transactions called for user:", userId);
+  console.log("GET /api/transactions called for email:", email);
   try {
     const { databases } = await createClient();
     console.log("Appwrite client created successfully");
@@ -27,7 +42,7 @@ export async function GET(request: Request) {
     const response = await databases.listDocuments(
       DATABASE_ID,
       USER_COLLECTION_ID,
-      [Query.equal("userId", userId)]
+      [Query.equal("email", email)] // Use email in the query
     );
     console.log("Raw response from Appwrite:", JSON.stringify(response, null, 2));
 
@@ -44,6 +59,7 @@ export async function GET(request: Request) {
       type: doc.type || "income",
       category: doc.category || "",
       date: doc.date || "",
+      email: doc.email || "",
     }));
 
     console.log("Processed transactions:", JSON.stringify(transactions, null, 2));
@@ -56,52 +72,88 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const transaction: Transaction = await request.json();
-  const userId = await getUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+  const email = user.email // Extract email instead of userId
+  if (!email) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  console.log("POST /api/transactions called for user:", userId);
   try {
-    const { databases } = await createClient();
+    const transaction: Transaction = await request.json();
+
     console.log("Received transaction:", transaction);
-    
+    console.log("Email:", email);
+
     if (!DATABASE_ID || !USER_COLLECTION_ID) {
       throw new Error("Database ID or Collection ID is missing");
     }
 
-    const newDoc = await databases.createDocument(
-      DATABASE_ID,
-      USER_COLLECTION_ID,
-      ID.unique(),
-      {
-        ...transaction,
-        userId: userId
-      }
-    );
-    console.log("New transaction created with ID:", newDoc.$id);
-    return NextResponse.json({ message: "Transaction saved successfully", id: newDoc.$id });
+    // Validate transaction fields
+    if (!transaction.description || transaction.amount === undefined || !transaction.type || !transaction.date) {
+      return NextResponse.json(
+        { error: "All fields (description, amount, type, date) are required." },
+        { status: 400 }
+      );
+    }
+
+    const { databases } = await createClient();
+    console.log("Appwrite client created successfully");
+
+    let result;
+    if (transaction.id) {
+      // Edit existing transaction
+      console.log("Editing transaction with ID:", transaction.id);
+      result = await databases.updateDocument(
+        DATABASE_ID,
+        USER_COLLECTION_ID,
+        transaction.id,
+        {
+          ...transaction,
+          email: email, // Use email instead of userId
+        }
+      );
+    } else {
+      // Create new transaction
+      console.log("Creating new transaction");
+      result = await databases.createDocument(
+        DATABASE_ID,
+        USER_COLLECTION_ID,
+        ID.unique(),
+        {
+          ...transaction,
+          email: email, // Use email instead of userId
+        }
+      );
+    }
+
+    console.log("Transaction processed successfully:", result.$id);
+    return NextResponse.json({
+      message: transaction.id ? "Transaction updated successfully" : "Transaction created successfully",
+      id: result.$id,
+    });
   } catch (error) {
-    console.error("Error saving transaction:", error);
-    return NextResponse.json({ error: "Failed to save transaction", details: error.message }, { status: 500 });
+    console.error("Error processing transaction:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to process transaction",
+        details: error.message || "Unknown error occurred",
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: Request) {
-  const { id } = await request.json();
-  const userId = await getUserId();
-
-  if (!userId) {
-    return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+  const email = user.email; // Extract email instead of userId
+  if (!email) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
 
-  console.log("DELETE /api/transactions called for user:", userId);
+  const { id } = await request.json();
+  console.log("DELETE /api/transactions called for email:", email);
   try {
     const { databases } = await createClient();
     console.log("Deleting transaction with ID:", id);
-    
+
     if (!DATABASE_ID || !USER_COLLECTION_ID) {
       throw new Error("Database ID or Collection ID is missing");
     }
@@ -114,4 +166,3 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Failed to delete transaction", details: error.message }, { status: 500 });
   }
 }
-

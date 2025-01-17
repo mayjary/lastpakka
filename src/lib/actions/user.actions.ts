@@ -330,7 +330,7 @@ export const createTransaction = async ({
 
     const newTransaction = await database.createDocument(
       DATABASE_ID!,
-      TRANSACTION_COLLECTION!, // Replace with your transactions collection ID
+      TRANSACTION_COLLECTION!, 
       ID.unique(),
       {
         userId,
